@@ -25,9 +25,10 @@ writes into the package `DESCRIPTION` — which is why `deploy.yaml` installs
    build at `https://viniciusoike.r-universe.dev/ekioplot` (check the **wasm**
    badge).
 
-2. Enable GitHub Pages for **this** repo from the **`gh-pages`** branch
-   (Settings → Pages → Source: Deploy from a branch → `gh-pages` / root). The
-   workflow creates and pushes that branch on the first run.
+2. Set GitHub Pages for **this** repo to deploy from Actions
+   (Settings → Pages → Build and deployment → Source: **GitHub Actions**).
+   `deploy.yaml` uses the official `upload-pages-artifact` / `deploy-pages`
+   actions — there is no `gh-pages` branch to manage.
 
 After that, every push to `main`/`master` rebuilds and redeploys the app.
 

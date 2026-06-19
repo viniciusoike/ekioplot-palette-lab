@@ -1,6 +1,9 @@
 # Build the shinylive (WebAssembly) Palette Lab and deploy it to GitHub Pages.
 # The app runs entirely in the browser via webR — there is no Shiny server.
 # Hosted at: https://viniciusoike.github.io/ekioplot-palette-lab/
+#
+# Uses GitHub's native Pages deployment, so the repo's Pages source must be set
+# to "GitHub Actions" (Settings -> Pages -> Build and deployment -> Source).
 name: deploy
 
 on:
@@ -8,19 +11,20 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
-# Allow pushing the built site to the gh-pages branch.
+# Permissions required by the official Pages deploy actions.
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
+# Allow one concurrent deployment; don't cancel an in-progress production deploy.
 concurrency:
-  group: pages-${{ github.ref }}
-  cancel-in-progress: true
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -61,9 +65,18 @@ jobs:
         run: shinylive::export(".", "_site")
         shell: Rscript {0}
 
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          clean: true
-          branch: gh-pages
-          folder: _site
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
