@@ -1,0 +1,69 @@
+# Build the shinylive (WebAssembly) Palette Lab and deploy it to GitHub Pages.
+# The app runs entirely in the browser via webR — there is no Shiny server.
+# Hosted at: https://viniciusoike.github.io/ekioplot-palette-lab/
+name: deploy
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+# Allow pushing the built site to the gh-pages branch.
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      # The app's runtime packages. shinylive reads each one's DESCRIPTION to
+      # resolve its WebAssembly build from https://repo.r-wasm.org.
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::shinylive
+            any::shiny
+            any::bslib
+            any::ggplot2
+            any::dplyr
+            any::forcats
+            any::stringr
+            any::tibble
+            any::ggbump
+            any::patchwork
+            any::colorspace
+            any::colourpicker
+
+      # Install ekioplot from r-universe so its DESCRIPTION carries the
+      # `Repository:` field shinylive needs to fetch the matching WebAssembly
+      # binary. (r-universe auto-builds the WASM binary from the GitHub repo.)
+      - name: Install ekioplot from r-universe (for the WASM binary reference)
+        run: |
+          install.packages(
+            "ekioplot",
+            repos = c("https://viniciusoike.r-universe.dev", "https://cloud.r-project.org")
+          )
+        shell: Rscript {0}
+
+      - name: Build Palette Lab (shinylive)
+        run: shinylive::export(".", "_site")
+        shell: Rscript {0}
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          clean: true
+          branch: gh-pages
+          folder: _site
