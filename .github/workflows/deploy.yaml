@@ -32,32 +32,21 @@ jobs:
         with:
           use-public-rspm: true
 
-      # The app's runtime packages. shinylive reads each one's DESCRIPTION to
-      # resolve its WebAssembly build from https://repo.r-wasm.org.
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          packages: |
-            any::shinylive
-            any::shiny
-            any::bslib
-            any::ggplot2
-            any::dplyr
-            any::forcats
-            any::stringr
-            any::tibble
-            any::ggbump
-            any::patchwork
-            any::colorspace
-            any::colourpicker
-
-      # Install ekioplot from r-universe so its DESCRIPTION carries the
-      # `Repository:` field shinylive needs to fetch the matching WebAssembly
-      # binary. (r-universe auto-builds the WASM binary from the GitHub repo.)
-      - name: Install ekioplot from r-universe (for the WASM binary reference)
+      # This repo is a Shiny app, not an R package (no DESCRIPTION), so install
+      # packages directly rather than via setup-r-dependencies. shinylive reads
+      # each one's DESCRIPTION to resolve its WebAssembly build from
+      # https://repo.r-wasm.org. ekioplot is not on CRAN, so it comes from
+      # r-universe — whose install writes the `Repository:` field shinylive
+      # needs to fetch the matching WebAssembly binary.
+      - name: Install R packages
         run: |
           install.packages(
-            "ekioplot",
-            repos = c("https://viniciusoike.r-universe.dev", "https://cloud.r-project.org")
+            c(
+              "shinylive", "shiny", "bslib", "ggplot2", "dplyr", "forcats",
+              "stringr", "tibble", "ggbump", "patchwork", "colorspace",
+              "colourpicker", "ekioplot"
+            ),
+            repos = c("https://viniciusoike.r-universe.dev", getOption("repos"))
           )
         shell: Rscript {0}
 
